@@ -1,0 +1,250 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+    <style>
+      #calendar{ font-size:14px; }
+
+   
+      .day {
+  display:inline-block;
+  width:30px;
+  text-align:center;
+  cursor:pointer;
+  margin:2px;
+}
+
+.selected {
+  background:#8DAE10;
+  color:#fff;
+  border-radius:50%;
+}
+
+.range {
+  background:#dce8b2;
+}
+
+.row {
+  display:block;
+  height:4px;
+}
+    </style>
+  </head>
+
+  <body>
+    <div id="calendar"></div>
+    <input type="text" id="dateInput" placeholder="Select date range" readonly>
+
+    <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+  <script>
+(function ($) {
+  $.fn.CustomDatePicker = function (options) {
+
+    function daysInMonth(month, year) {
+      return new Date(year, month, 0).getDate();
+    }
+
+    function formatDate(y, m, d) {
+      return `${y}-${m + 1}-${d}`;
+    }
+
+    var settings = $.extend({ //extend key word multiple objects ko merge krta targated element me
+      heading: "Date Range Picker",
+      onApply: function (range) {}
+    }, options);
+
+    return this.each(function () {
+
+      var input = $(this);
+
+      var container = $('<div>', {
+        class: 'custom-picker',
+        css: {
+          position: 'absolute',
+          background: '#fff',
+          border: '1px solid #ccc',
+          padding: '10px',
+          display: 'none',
+          zIndex: 999
+        }
+      }).appendTo('body');
+
+      var today = new Date();
+      var monthIndex = today.getMonth();
+      var year = today.getFullYear();
+
+      var startDate = null;
+      var endDate = null;
+
+      var months = [
+        "January","February","March","April","May","June",
+        "July","August","September","October","November","December"
+      ];
+
+      function render() {
+        container.empty();
+
+        // 🔹 Header (Month + Year + Arrows)
+        let header = $('<div style="margin-bottom:10px;"></div>');
+
+        let prev = $('<button>&lt;</button>').on('click', function () {
+          monthIndex--;
+          if (monthIndex < 0) {
+            monthIndex = 11;
+            year--;
+          }
+          render();
+        });
+
+        let next = $('<button>&gt;</button>').on('click', function () {
+          monthIndex++;
+          if (monthIndex > 11) {
+            monthIndex = 0;
+            year++;
+          }
+          render();
+        });
+
+        let monthLabel = $('<span>', {
+          text: months[monthIndex],
+          style: 'margin:0 10px; font-weight:bold;'
+        });
+
+        // 🔹 Year Dropdown (±10 years)
+        let yearSelect = $('<select></select>').on('change', function () {
+          year = parseInt($(this).val());
+          render();
+        });
+
+        for (let y = year - 10; y <= year + 10; y++) {
+          yearSelect.append(`<option value="${y}" ${y === year ? 'selected' : ''}>${y}</option>`);
+        }
+
+        header.append(prev, monthLabel, next, yearSelect);
+        container.append(header);
+
+        // 🔹 Days
+        let noDays = daysInMonth(monthIndex + 1, year);
+
+        for (let i = 1; i <= noDays; i++) {
+
+          let daySpan = $('<span>', {
+            class: 'day',
+            text: i,
+            'data-day': i
+          });
+
+          daySpan.on('click', function () {
+
+            let clickedDate = new Date(year, monthIndex, i);
+
+            if (startDate && endDate) {
+              startDate = clickedDate;
+              endDate = null;
+              container.find('.day').removeClass('selected range');
+              $(this).addClass('selected');
+              return;
+            }
+
+            if (!startDate) {
+              startDate = clickedDate;
+              $(this).addClass('selected');
+            } else {
+              if (clickedDate < startDate) {
+                endDate = startDate;
+                startDate = clickedDate;
+              } else {
+                endDate = clickedDate;
+              }
+
+              container.find('.day').removeClass('range');
+
+              container.find('.day').each(function () {
+                let d = $(this).data('day');
+                let current = new Date(year, monthIndex, d);
+
+                if (current > startDate && current < endDate) {
+                  $(this).addClass('range');
+                }
+              });
+
+              $(this).addClass('selected');
+            }
+          });
+
+          container.append(daySpan);
+
+          if (i % 7 === 0) {
+            container.append('<div class="row"></div>');
+          }
+        }
+
+        // 🔹 Buttons
+        let btnContainer = $('<div style="margin-top:10px;"></div>');
+
+        $('<button>', {
+          text: 'Apply',
+          click: function () {
+            if (startDate && endDate) {
+              let start = formatDate(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+              let end = formatDate(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+
+              input.val(start + " to " + end);
+              settings.onApply({ start, end });
+
+              container.hide();
+            } else {
+              alert("Select range");
+            }
+          }
+        }).appendTo(btnContainer);
+
+        $('<button>', {
+          text: 'Cancel',
+          style: 'margin-left:10px;',
+          click: function () {
+            startDate = null;
+            endDate = null;
+            container.hide();
+          }
+        }).appendTo(btnContainer);
+
+        container.append(btnContainer);
+      }
+
+      // 🔹 Show on input click
+      input.on('click', function (e) {
+        e.stopPropagation();
+
+        render();
+
+        let offset = input.offset();
+        container.css({
+          top: offset.top + input.outerHeight(),
+          left: offset.left
+        }).show();
+      });
+
+      // 🔹 Hide on outside click
+      $(document).on('click', function () {
+        container.hide();
+      });
+
+      container.on('click', function (e) {
+        e.stopPropagation();
+      });
+
+    });
+  };
+}(jQuery));
+
+// Init
+$("#dateInput").CustomDatePicker({
+  onApply: function(range){
+    console.log(range);
+  }
+});
+</script>
+  </body>
+</html>
