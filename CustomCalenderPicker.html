@@ -84,8 +84,6 @@
 
       function render() {
         container.empty();
-
-        // 🔹 Header (Month + Year + Arrows)
         let header = $('<div style="margin-bottom:10px;"></div>');
 
         let prev = $('<button>&lt;</button>').on('click', function () {
@@ -111,7 +109,6 @@
           style: 'margin:0 10px; font-weight:bold;'
         });
 
-        // 🔹 Year Dropdown (±10 years)
         let yearSelect = $('<select></select>').on('change', function () {
           year = parseInt($(this).val());
           render();
@@ -124,7 +121,6 @@
         header.append(prev, monthLabel, next, yearSelect);
         container.append(header);
 
-        // 🔹 Days
         let noDays = daysInMonth(monthIndex + 1, year);
 
         for (let i = 1; i <= noDays; i++) {
@@ -180,7 +176,6 @@
           }
         }
 
-        // 🔹 Buttons
         let btnContainer = $('<div style="margin-top:10px;"></div>');
 
         $('<button>', {
@@ -213,7 +208,6 @@
         container.append(btnContainer);
       }
 
-      // 🔹 Show on input click
       input.on('click', function (e) {
         e.stopPropagation();
 
@@ -226,7 +220,6 @@
         }).show();
       });
 
-      // 🔹 Hide on outside click
       $(document).on('click', function () {
         container.hide();
       });
@@ -239,7 +232,6 @@
   };
 }(jQuery));
 
-// Init
 $("#dateInput").CustomDatePicker({
   onApply: function(range){
     console.log(range);
